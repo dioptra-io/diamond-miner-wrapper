@@ -90,6 +90,8 @@ Notice that you can install the core routines on the vantage points of the Globa
 ```
 python3 Install.py
 ```
+Depending of the OS of your vantage points, you might want to modify the script install_dependencies.sh, which works for Fedora and CentOS.
+The install_dependencies_ubuntu.sh works for Ubuntu.
 
 ## Deploying in a docker container.
 Coming soon.
