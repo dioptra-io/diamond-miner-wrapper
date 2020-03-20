@@ -38,7 +38,7 @@ def rsync(node, user, home):
     cmd = "cd ~/Heartbeat; " \
           "rsync -v --progress --stats -a -m  -e 'ssh -o StrictHostKeyChecking=no' " \
           "--exclude='*build*' --exclude='*cmake-build*' --exclude='*.git' --exclude='*.idea' --exclude='resources/*' --exclude='*.libs' " \
-          " /home/kevin/Docker/Heartbeat/ " + user + "@" + node + ":~/Heartbeat/"
+          " /home/survey/Heartbeat/ " + user + "@" + node + ":~/Heartbeat/"
 
     print(cmd)
 
@@ -140,7 +140,7 @@ def install_dependencies(node, user, home_dir, install_dependencies_script):
         print(node + ": " + line)
 
 def full_install(node, user, home_dir):
-    targets_file = "/home/kevin/Docker/Heartbeat-py/resources/traceroute_list.txt"
+    targets_file = "/home/survey/Heartbeat-py/resources/traceroute_list.txt"
     install_dependencies_script = "install_dependencies.sh"
     install_dependencies(node, user, home_dir, install_dependencies_script)
     clean(node, user, home_dir)

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # with open("resources/dummy_prefixes") as f:
     #     for ip in f:
     #         ip = int(ip.strip("\n"))
-    print(str(ipaddress.ip_address(2441641477)))
+    print(str(ipaddress.ip_address(1372017153)))
     print(str(ipaddress.ip_address(2442231810)))
 
     print(str(ipaddress.ip_address(3567359358)) + " -> " + str(ipaddress.ip_address(3567359707)))
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     # ip2int(ipaddress.ip_address(2910098947))
 
 
-    print(int(ipaddress.IPv4Address("195.69.144.0")), " src")
+    print(int(ipaddress.IPv4Address("192.33.193.16")), " src")
     print(int(ipaddress.IPv4Address("134.157.254.243")))
     network = ipaddress.ip_network("100.64.0.0/10")
     # ip = int(ipaddress.IPv4Address("17.1.1.101"))

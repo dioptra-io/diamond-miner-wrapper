@@ -52,8 +52,10 @@ def clean_table(db_host, table):
     for line in err:
         print(line)
 
-def dump_table_name(table, resources_dir):
-    with open(resources_dir + "d_miner_table", "w") as f:
-        f.write(table)
+def dump_table_names(tables, resources_dir):
+    with open(resources_dir + "d_miner_tables", "w") as f:
+        for table in tables:
+            f.write(table + "\n")
+
 
 

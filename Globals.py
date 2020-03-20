@@ -24,7 +24,7 @@ nodes = [
         # ("planetlab1.u-strasbg.fr", "root", "/root/", "/vservers/upmc_kvermeulen/srv/"),
         # ("ple1.cesnet.cz", "root", "/root/", "/vservers/upmc_kvermeulen/srv/"),
         # ("planetlab3.cs.ubc.ca", "root", "/root/", "/vservers/upmc_kvermeulen/srv/"),
-        # ("ple2.planet-lab.eu", "root", "/root/", "/root/Heartbeat/resources/"),
+        # ("ple42.planet-lab.eu", "root", "/root/", "/root/Heartbeat/resources/"),
         #############################################
 
         # ("upchuck.cmand.org", "kvermeulen", "/home/kvermeulen/", "/home/kvermeulen/Heartbeat/resources/"),

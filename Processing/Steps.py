@@ -122,6 +122,8 @@ def probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic):
                 " -s " + str(options.sup_born) + \
                 " -p " + str(options.proto) + \
                 " --dport=" + str(options.dport) + \
+                " --min-ttl=" + str(options.min_ttl) + \
+                " --max-ttl=" + str(options.max_ttl) + \
                 " --record-timestamp " + \
                 " --start-time-log-file=" + start_time_log_file
 

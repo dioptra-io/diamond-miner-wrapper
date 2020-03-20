@@ -175,7 +175,10 @@ if __name__ == "__main__":
             '--rotation rotation number on the VP\n'\
             '--proto protocol for probing (udp, tcp, icmp)\n' \
             '--dport destination port for probing (default 33434)\n' \
-            '--targets targets file if not exhaustive probing'
+            '--min-ttl minimum ttl to probe\n' \
+            '--max-ttl maximum ttl to probe\n' \
+            '--targets targets file if not exhaustive probing\n'
+
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hr:t:p:", ["help",
@@ -191,6 +194,8 @@ if __name__ == "__main__":
                                                            "rotation=",
                                                            "proto=",
                                                            "dport=",
+                                                           "min-ttl=",
+                                                           "max-ttl=",
                                                            "targets=",
                                                            "only-analyse"
                                                         ])
@@ -249,8 +254,10 @@ if __name__ == "__main__":
             options.proto = arg
         elif opt in ("--dport"):
             options.dport = arg
-        elif opt in ("--targets"):
-            options.targets = arg
+        elif opt in ("--min-ttl"):
+            options.min_ttl = arg
+        elif opt in ("--max-ttl"):
+            options.max_ttl = arg
         elif opt in ("--only-analyse"):
             options.only_analyse = True
         print(opt + " set to:" + arg)
@@ -284,6 +291,7 @@ if __name__ == "__main__":
 
 
         threads = []
+        db_tables = []
         time_file = "resources/d-miner.start_time_" + str(n_snapshots)
         with open(options.heartbeat_dir + time_file, "w") as f:
             f.write(str(time.time()))
@@ -298,6 +306,9 @@ if __name__ == "__main__":
             # options.probing_rate = 100000 / len(nodes)
             options_node.inf_born = 0
             options_node.sup_born = 2**32-1
+            table_node = node.replace(".", "_")
+            table_node = table_node.replace("-", "_")
+            options_node.db_table += "_" + table_node
             if node == localhost:
 
                 options_node.is_remote_probe = False
@@ -305,7 +316,7 @@ if __name__ == "__main__":
                 options_node.home_dir = "/root/"
                 options_node.remote_probe_hostname = localhost
                 options_node.remote_probe_ip = socket.gethostbyname(socket.gethostname())
-                options_node.db_table += "_" + str(int(time.time()))
+                options_node.db_table +=  "_" + str(int(time.time()))
                 # options_node.probing_rate = 100
             else:
                 options_node.is_remote_probe = True
@@ -322,13 +333,14 @@ if __name__ == "__main__":
 
             create_table(options_node.db_host, options_node.db_table)
             clean_table(options_node.db_host, options_node.db_table)
-            dump_table_name(options_node.db_table, options_node.heartbeat_dir + "resources/")
+            db_tables.append(options_node.db_table)
 
             # Start thread
             t = Thread(target=stochastic_snapshot, args=(snapshot, starting_round, n_rounds, options_node.db_table, options_node,))
             t.start()
             threads.append(t)
             time.sleep(20)
+        dump_table_names(db_tables, options.heartbeat_dir + "resources/")
         for t in threads:
             t.join()
 

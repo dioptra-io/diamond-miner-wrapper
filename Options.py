@@ -25,6 +25,8 @@ class Options:
         self.sup_born = 0
         self.proto = None
         self.dport = 33434
+        self.min_ttl = 3
+        self.max_ttl = 30
         self.targets = None
         self.only_analyse = False
 
@@ -33,7 +35,7 @@ class StochasticOptions(Options):
     def __init__(self):
         super().__init__()
         self.stochastic_snapshot_number = 5
-        self.n_destinations_24 = 1
+        self.n_destinations_24 = 6
         self.packets_per_flow = 1
         self.is_split_ipv4_space = True
 
