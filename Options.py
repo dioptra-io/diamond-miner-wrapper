@@ -1,13 +1,14 @@
+import os
+
 
 class Options:
-
     def __init__(self):
         self.probes_file_prefix = "probes_round_"
         self.replies_file_prefix = "replies_round_"
         self.pcap_file_prefix = "heartbeat-pfring-round-"
         # self.heartbeat_dir = "/slush/kvermeulen/Heartbeat/"
-        self.home_dir="/root/"
-        self.heartbeat_dir =  self.home_dir + "Heartbeat/"
+        self.home_dir = "/root/"
+        self.heartbeat_dir = self.home_dir + "Heartbeat/"
         self.probe_dir = ""
         self.heartbeat_binary = self.heartbeat_dir + "build/Heartbeat"
         self.process_binary = self.heartbeat_dir + "build/Reader"
@@ -28,10 +29,11 @@ class Options:
         self.min_ttl = 3
         self.max_ttl = 30
         self.targets = None
+        self.nodes = os.path.dirname(__file__) + "/nodes/localhost.json"
         self.only_analyse = False
 
-class StochasticOptions(Options):
 
+class StochasticOptions(Options):
     def __init__(self):
         super().__init__()
         self.stochastic_snapshot_number = 5
@@ -41,9 +43,6 @@ class StochasticOptions(Options):
 
 
 class DynamicsOptions(Options):
-
     def __init__(self):
         super().__init__()
         self.previous_window = 5
-
-
