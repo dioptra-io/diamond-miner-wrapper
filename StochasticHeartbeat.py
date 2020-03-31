@@ -398,7 +398,7 @@ if __name__ == "__main__":
     options.stochastic_snapshot_number = 1
     nodes = json.load(open(options.nodes))["nodes"]
 
-    database_name = options.table.split(".")[0]
+    database_name = options.db_table.split(".")[0]
     print("Create database " + database_name + " if not exists")
     create_datebase(options.db_host, database_name)
 

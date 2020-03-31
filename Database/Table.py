@@ -12,7 +12,7 @@ def create_datebase(db_host, database_name):
     cmd = (
         "clickhouse-client --host="
         + db_host
-        + " --query='CREATE DATABASE IF NOT EXISTS"
+        + " --query='CREATE DATABASE IF NOT EXISTS "
         + database_name
         + "'"
     )
