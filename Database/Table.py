@@ -8,6 +8,27 @@ def node_to_table(node):
     return table_prefix + table
 
 
+def create_datebase(db_host, database_name):
+    cmd = (
+        "clickhouse-client --host="
+        + db_host
+        + " --query='CREATE DATABASE IF NOT EXISTS"
+        + database_name
+        + "'"
+    )
+
+    print("Executing " + cmd)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    out, err = p.communicate()
+
+    out = [line.decode("utf-8") for line in out.splitlines()]
+    err = [line.decode("utf-8") for line in err.splitlines()]
+    for line in out:
+        print(line)
+    for line in err:
+        print(line)
+
+
 def create_table(db_host, table):
 
     drop_cmd = (

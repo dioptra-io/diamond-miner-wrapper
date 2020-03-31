@@ -1,15 +1,13 @@
-from subprocess import Popen, PIPE
-import paramiko
-import time
-import sys
-import getopt
 import copy
-import socket
+import getopt
 import os
 import json
-from getpass import getpass
+import socket
+import sys
+import time
+
 from Options import StochasticOptions
-from Database.Table import *
+from Database.Table import create_datebase, create_table, clean_table, dump_table_names
 from Processing.Steps import *
 from threading import Thread
 
@@ -383,6 +381,8 @@ if __name__ == "__main__":
             options.proto = arg
         elif opt in ("--dport"):
             options.dport = arg
+        elif opt in ("--targets"):
+            options.targets = arg
         elif opt in ("--min-ttl"):
             options.min_ttl = arg
         elif opt in ("--max-ttl"):
@@ -397,6 +397,10 @@ if __name__ == "__main__":
 
     options.stochastic_snapshot_number = 1
     nodes = json.load(open(options.nodes))["nodes"]
+
+    database_name = options.table.split(".")[0]
+    print("Create database " + database_name + " if not exists")
+    create_datebase(options.db_host, database_name)
 
     n_snapshots = 1
     n_rounds = 10
@@ -496,4 +500,4 @@ if __name__ == "__main__":
         with open(options.heartbeat_dir + time_file, "w") as f:
             f.write(str(time.time()))
             f.flush()
-        # stochastic_snapshot(snapshot_number, starting_round, n_rounds, options.db_table, options)
+        # stochastic_snapshot(snapshot_number, starting_round, n_rounds, options.db_table, options)  # noqa
