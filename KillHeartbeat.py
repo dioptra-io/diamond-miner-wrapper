@@ -1,7 +1,7 @@
 import paramiko
 from threading import Thread
-from Globals import nodes
-
+import json
+import sys
 def kill_heartbeat(node, user):
     client = paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
@@ -25,13 +25,13 @@ if __name__ == "__main__":
     '''
         This script installs dependencies  of Heartbeat (libtins, libcperm)
     '''
-
+    nodes = json.load(open(sys.argv[1]))
     threads = []
-    for node, user, home_dir, resources_dir in nodes:
-        if node == "localhost":
+    for node in nodes["nodes"]:
+        if node["server"] == "localhost":
             continue
         t = Thread(target=kill_heartbeat,
-                   args=(node, user,))
+                   args=(node["server"], node["user"],))
         t.start()
         threads.append(t)
     for t in threads:

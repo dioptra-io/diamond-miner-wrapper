@@ -402,6 +402,8 @@ if __name__ == "__main__":
     print("Create database " + database_name + " if not exists")
     create_datebase(options.db_host, database_name)
 
+    # INSTANTIATE CONTAINER IN KUBE
+
     n_snapshots = 1
     n_rounds = 10
     starting_round = 1
@@ -501,3 +503,5 @@ if __name__ == "__main__":
             f.write(str(time.time()))
             f.flush()
         # stochastic_snapshot(snapshot_number, starting_round, n_rounds, options.db_table, options)  # noqa
+
+# REMOVE CONTAINER FROM KUBE
