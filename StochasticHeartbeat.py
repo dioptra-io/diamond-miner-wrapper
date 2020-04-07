@@ -8,7 +8,27 @@ import time
 
 from Options import StochasticOptions
 from Database.Table import create_datebase, create_table, clean_table, dump_table_names
-from Processing.Steps import *
+from Kubernetes import (
+    create_pods,
+    test_ls,
+    get_pods,
+    delete_pods,
+    kube_target_server_to_prober,
+    kube_next_round_server_to_prober_csv,
+    kube_remove_file_from_remote,
+    kube_prober_to_server,
+    kube_probe,
+)
+from Processing.Steps import (
+    probe,
+    remove_file_from_remote,
+    prober_to_server,
+    pcap_to_csv,
+    insert_csv_to_db,
+    next_round_csv,
+    shuffle_next_round_csv,
+    next_round_server_to_prober_csv,
+)
 from threading import Thread
 
 
@@ -22,6 +42,20 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
     :return:
     """
     start_time = time.time()
+
+    if options.remote_probe_type == "vm":
+        probe_func = probe
+        prober_to_server_func = prober_to_server
+        remove_file_from_remote_func = remove_file_from_remote
+        next_round_server_to_prober_csv_func = next_round_server_to_prober_csv
+    elif options.remote_probe_type == "pod":
+        probe_func = kube_probe
+        prober_to_server_func = kube_prober_to_server
+        remove_file_from_remote_func = kube_remove_file_from_remote
+        next_round_server_to_prober_csv_func = kube_next_round_server_to_prober_csv
+    else:
+        raise ValueError(f"Unrecognized node type {options.remote_probe_type}")
+
     for round in range(starting_round, n_round + 1):
 
         resources_dir = options.heartbeat_dir + "resources/"
@@ -111,7 +145,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
             # Reset the targets to None for the subsequent rounds.
             options.targets = None
         if not options.only_analyse:
-            probe(
+            probe_func(
                 pcap_file,
                 shuffled_probes_csv_file,
                 start_time_log_file,
@@ -122,7 +156,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                 remote_shuffled_probes_csv_file = (
                     remote_resources_dir + shuffled_csv_file_suffix
                 )
-                remove_file_from_remote(remote_shuffled_probes_csv_file, options)
+                remove_file_from_remote_func(remote_shuffled_probes_csv_file, options)
             end_probe_time = time.time()
             print(
                 "probe round "
@@ -137,7 +171,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                 scp_time = time.time()
                 remote_pcap_file = remote_resources_dir + pcap_file_suffix
                 local_pcap_file = resources_dir + pcap_file_suffix
-                prober_to_server(remote_pcap_file, local_pcap_file, options)
+                prober_to_server_func(remote_pcap_file, local_pcap_file, options)
                 end_scp_time = time.time()
                 print(
                     "scp "
@@ -147,7 +181,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                     + " seconds."
                 )
                 # Remove the pcap to not overload the memory of the node
-                remove_file_from_remote(pcap_file, options)
+                remove_file_from_remote_func(pcap_file, options)
 
                 # Get the start log file to the central place.
                 if options.proto == "tcp":
@@ -158,7 +192,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                     local_start_time_log_file = (
                         resources_dir + start_time_log_file_suffix
                     )
-                    prober_to_server(
+                    prober_to_server_func(
                         remote_start_time_log_file, local_start_time_log_file, options
                     )
                     end_scp_time = time.time()
@@ -248,7 +282,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
             remote_shuffled_next_round_csv_file = (
                 remote_resources_dir + shuffled_next_round_csv_file_suffix
             )
-            next_round_server_to_prober_csv(
+            next_round_server_to_prober_csv_func(
                 local_shuffled_next_round_csv_file,
                 remote_shuffled_next_round_csv_file,
                 options,
@@ -288,12 +322,15 @@ if __name__ == "__main__":
         "Usage : StochasticHeartbeat.py <options> \n"
         "options : \n"
         "--cpp-heartbeat-dir path to the directory of the binary heartbeat tool \n"
-        "-r --probing-rate define the probing rate of the machine (100Kpps by default) \n"
+        "-r --probing-rate define the probing rate "
+        "of the machine (100Kpps by default) \n"
         "--db-host IP address of the DB\n"
         "-t --table name of the database table to store and process the data\n"
-        "--remote-probing boolean if the probing and the processing are made on a different machines \n"
+        "--remote-probing boolean if the probing "
+        "and the processing are made on a different machines \n"
         "--remote-probing-host IP address of the probing machine \n"
-        "--remote-cpp-heartbeat-dir path to the remote directory of the binary heartbeat tool \n"
+        "--remote-cpp-heartbeat-dir path "
+        "to the remote directory of the binary heartbeat tool \n"
         "--n_destinations number of destinations per /24 \n"
         "--split-ipv4-space split the IPv4 space across different vantage points\n"
         "--rotation rotation number on the VP\n"
@@ -354,6 +391,7 @@ if __name__ == "__main__":
     options.is_remote_probe = False
     options.remote_probe_hostname = "vesper.tancad.net"
     options.remote_probe_user = "root"
+    options.remote_probe_type = "vm"
 
     for opt, arg in opts:
 
@@ -396,13 +434,29 @@ if __name__ == "__main__":
     check_options(options)
 
     options.stochastic_snapshot_number = 1
-    nodes = json.load(open(options.nodes))["nodes"]
+    nodes_configuration = json.load(open(options.nodes))
+    nodes = nodes_configuration["nodes"]
+    for node in nodes:
+        node["type"] = "vm"
 
     database_name = options.db_table.split(".")[0]
     print("Create database " + database_name + " if not exists")
     create_datebase(options.db_host, database_name)
 
-    # INSTANTIATE CONTAINER IN KUBE
+    # Instantiate containers in Kuberbernetes
+    kubernetes = nodes_configuration.get("kubernetes")
+    sleep_time = 30
+    if kubernetes:
+        create_pods(kubernetes)
+        print(f"Waiting {sleep_time}s")
+        time.sleep(sleep_time)
+        nodes += get_pods(kubernetes)
+        if options.targets:
+            for node in nodes:
+                kube_target_server_to_prober(
+                    options.targets, options.targets, node, kubernetes
+                )
+                test_ls(options.targets, node, kubernetes)
 
     n_snapshots = 1
     n_rounds = 10
@@ -411,12 +465,15 @@ if __name__ == "__main__":
     localhost = "localhost"
     for snapshot in range(options.stochastic_snapshot_number, n_snapshots + 1):
         """
-        This is a full stochastic Internet snapshot composed of rounds based on combination of Yaarp and MDA.
+        This is a full stochastic Internet snapshot
+        composed of rounds based on combination of Yaarp and MDA.
+
         A round is composed of the following steps:
         (1) Probe from a file, or exhaustive probing for round 1.
         (2) Pcap->CSV from replies.
         (3) Insert into the DB and sort by (src_ip, dst_ip)
-        (4) Query the next round on a link based MDA and output the next probes in a CSV file.
+        (4) Query the next round on a link based MDA
+            and output the next probes in a CSV file.
         (5) Shuffle the next round CSV probe file.
         (6) Go to (1) and execute it with the shuffled next round probe file.
 
@@ -436,6 +493,7 @@ if __name__ == "__main__":
             # sup_born = int(((i + 1) * (2 ** 32 - 1) / ipv4_split))
 
             node = snapshot_nodes[i]["server"]
+            node_type = snapshot_nodes[i]["type"]
             user = snapshot_nodes[i]["user"]
             home_dir = snapshot_nodes[i]["home"]
             remote_resources_dir = snapshot_nodes[i]["resources"]
@@ -449,8 +507,8 @@ if __name__ == "__main__":
             table_node = table_node.replace("-", "_")
             options_node.db_table += "_" + table_node
             if node == localhost:
-
                 options_node.is_remote_probe = False
+                options_node.remove_probe_type = "vm"
                 options_node.heartbeat_binary = (
                     options.heartbeat_dir + "build/Heartbeat"
                 )
@@ -461,8 +519,10 @@ if __name__ == "__main__":
                 )
                 options_node.db_table += "_" + str(int(time.time()))
                 # options_node.probing_rate = 100
-            else:
+
+            elif node_type == "vm":
                 options_node.is_remote_probe = True
+                options_node.remote_probe_type = node_type
                 options_node.remote_probe_hostname = node
                 options_node.remote_probe_ip = socket.gethostbyname(node)
                 options_node.remote_probe_user = user
@@ -475,6 +535,25 @@ if __name__ == "__main__":
                     options_node.probe_dir + "build/Heartbeat"
                 )
                 options_node.db_table += "_" + str(int(time.time()))
+
+            elif node_type == "pod":
+                options_node.remote_kubernetes_kubeconfig = kubernetes["kubeconfig"]
+                options_node.remote_kubernetes_namespace = kubernetes["namespace"]
+                options_node.max_ttl = kubernetes["max_ttl_limit"]
+                options_node.is_remote_probe = True
+                options_node.remote_probe_type = node_type
+                options_node.remote_probe_hostname = node
+                options_node.remote_probe_ip = snapshot_nodes[i]["host_ip"]
+                options_node.remote_probe_user = user
+                options_node.remote_resources_dir = remote_resources_dir
+                options_node.home_dir = "/root/"
+                options_node.probe_dir = home_dir + "Heartbeat/"
+                options_node.heartbeat_binary = (
+                    options_node.probe_dir + "build/Heartbeat"
+                )
+                options_node.db_table += "_" + str(int(time.time()))
+            else:
+                raise ValueError("Unrecognized node type")
 
             create_table(options_node.db_host, options_node.db_table)
             clean_table(options_node.db_host, options_node.db_table)
@@ -502,6 +581,7 @@ if __name__ == "__main__":
         with open(options.heartbeat_dir + time_file, "w") as f:
             f.write(str(time.time()))
             f.flush()
-        # stochastic_snapshot(snapshot_number, starting_round, n_rounds, options.db_table, options)  # noqa
 
-# REMOVE CONTAINER FROM KUBE
+# Remove containers from kubernetes
+if kubernetes:
+    delete_pods(kubernetes)

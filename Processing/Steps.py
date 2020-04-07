@@ -3,7 +3,7 @@ import ipaddress
 
 from subprocess import Popen, PIPE
 
-# A CHANGER
+
 def next_round_server_to_prober_csv(local_csv_file, remote_csv_file, options):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
@@ -124,7 +124,6 @@ def pcap_to_csv(snapshot, round, pcap_file, csv_file, start_time_log_file, optio
     out, err = pcap_to_csv_process.communicate()
 
 
-# A CHANGER
 def remove_file_from_remote(file, options):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
@@ -143,7 +142,6 @@ def remove_file_from_remote(file, options):
     client.close()
 
 
-# A CHANGER
 def prober_to_server(remote_file, local_file, options):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
@@ -163,7 +161,6 @@ def prober_to_server(remote_file, local_file, options):
     client.close()
 
 
-# A CHANGER (EXEC -IT)
 def probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic):
     """
 
@@ -208,9 +205,9 @@ def probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic):
     if options.is_remote_probe:
         if options.targets is not None:
             probe_cmd += " -T -t " + options.targets
-        """
-        Probing is done on another machine. So probe and then copy the pcap file on the processing machine.
-        """
+
+        # Probing is done on another machine.
+        # So probe and then copy the pcap file on the processing machine.
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         client.load_system_host_keys()

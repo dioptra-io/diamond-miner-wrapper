@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: diamond-miner
+  namespace: authority-lip6-lab-slice-diamond-miner
+spec:
+  selector:
+    matchLabels:
+      app: diamond-miner
+  template:
+    metadata:
+      labels:
+        app: diamond-miner
+    spec:
+      containers:
+      - name: diamond-miner
+        image: matthieugouel/diamond-miner-no-pfring:latest
+        resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+        imagePullPolicy: Always
+        command: ["sh", "-c", "tail -f /dev/null"]
+---
+apiVersion: apps.edgenet.io/v1alpha
+kind: SelectiveDeployment
+metadata:
+  name: diamond-miner
+  namespace: authority-lip6-lab-slice-diamond-miner
+spec:
+  controller:
+    - type: DaemonSet
+      name: diamond-miner
+  type: Continent
+  selector:
+    - value: North_America
+      operator: In
+      count: 1
+    # - value: Europe
+    #   operator: In
+    #   count: 1

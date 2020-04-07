@@ -32,6 +32,10 @@ class Options:
         self.nodes = os.path.dirname(__file__) + "/nodes/localhost.json"
         self.only_analyse = False
 
+        self.remote_probe_type = "vm"
+        self.remote_kubernetes_kubeconfig = None
+        self.remote_kubernetes_namespace = None
+
 
 class StochasticOptions(Options):
     def __init__(self):
