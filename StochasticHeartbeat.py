@@ -453,10 +453,11 @@ if __name__ == "__main__":
         nodes += get_pods(kubernetes)
         if options.targets:
             for node in nodes:
-                kube_target_server_to_prober(
-                    options.targets, options.targets, node, kubernetes
-                )
-                test_ls(options.targets, node, kubernetes)
+                if node["type"] == "pod":
+                    kube_target_server_to_prober(
+                        options.targets, options.targets, node, kubernetes
+                    )
+                    test_ls(options.targets, node, kubernetes)
 
     n_snapshots = 1
     n_rounds = 10
@@ -582,6 +583,6 @@ if __name__ == "__main__":
             f.write(str(time.time()))
             f.flush()
 
-# Remove containers from kubernetes
-if kubernetes:
-    delete_pods(kubernetes)
+    # Remove containers from kubernetes
+    if kubernetes:
+        delete_pods(kubernetes)

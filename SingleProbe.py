@@ -1,9 +1,7 @@
-import sys
-from scapy.all import sr1,IP,UDP, ICMP, TCP
+from scapy.all import sr1, IP, TCP
 from ipaddress import IPv4Address
 
 if __name__ == "__main__":
-
 
     destinations = []
     with open("resources/traceroute_list.txt") as f:
@@ -17,9 +15,9 @@ if __name__ == "__main__":
         s_port = 24000
         d_port = 33434
         ttl = 30
-
-
-        probe = IP(dst=destination, ttl=ttl, id=ttl)/TCP(sport=s_port, dport=d_port, seq=20000)
+        probe = IP(dst=destination, ttl=ttl, id=ttl) / TCP(
+            sport=s_port, dport=d_port, seq=20000
+        )
         # print(probe.show())
         p = sr1(probe, timeout=0.5, verbose=False)
         if p:
