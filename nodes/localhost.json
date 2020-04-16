@@ -4,6 +4,7 @@
             "server": "localhost",
             "user": "",
             "home": "",
+            "rate": 100000,
             "resources": ""
         }
     ]

@@ -112,6 +112,8 @@ def kube_probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic)
         + ofile
         + " -r "
         + str(options.probing_rate)
+        + " --buffer-sniffer-size="
+        + str(options.buffer_sniffer_size)
         + " -d "
         + str(options.n_destinations_24)
         + " -i "

@@ -13,6 +13,7 @@ class Options:
         self.heartbeat_binary = self.heartbeat_dir + "build/Heartbeat"
         self.process_binary = self.heartbeat_dir + "build/Reader"
         self.probing_rate = 100000
+        self.buffer_sniffer_size = 2000000
         # self.db_host = "localhost"
         self.db_host = "132.227.123.200"
         self.db_table = ""
