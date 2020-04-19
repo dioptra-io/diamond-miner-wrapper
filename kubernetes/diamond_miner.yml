@@ -18,11 +18,11 @@ spec:
         image: matthieugouel/diamond-miner-no-pfring:latest
         resources:
             limits:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "500Mi"
             requests:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "500Mi"
         imagePullPolicy: Always
         command: ["sh", "-c", "tail -f /dev/null"]
 ---

@@ -10,7 +10,7 @@ from Options import StochasticOptions
 from Database.Table import create_datebase, create_table, clean_table, dump_table_names
 from Kubernetes import (
     create_pods,
-    test_ls,
+    # test_ls,
     get_pods,
     delete_pods,
     kube_target_server_to_prober,
@@ -385,7 +385,6 @@ if __name__ == "__main__":
     else:
         options.heartbeat_binary = options.heartbeat_dir + "build/Heartbeat"
     options.process_binary = options.heartbeat_dir + "build/Reader"
-    options.probing_rate = 100000
     options.db_host = "localhost"
     # options.db_host = "132.227.123.200"
     options.is_remote_probe = False
@@ -445,7 +444,7 @@ if __name__ == "__main__":
 
     # Instantiate containers in Kuberbernetes
     kubernetes = nodes_configuration.get("kubernetes")
-    sleep_time = 30
+    sleep_time = 60
     if kubernetes:
         create_pods(kubernetes)
         print(f"Waiting {sleep_time}s")
@@ -454,10 +453,16 @@ if __name__ == "__main__":
         if options.targets:
             for node in nodes:
                 if node["type"] == "pod":
-                    kube_target_server_to_prober(
+                    res = kube_target_server_to_prober(
                         options.targets, options.targets, node, kubernetes
                     )
-                    test_ls(options.targets, node, kubernetes)
+                    if res == 1:
+                        print("Removing", node["server"], "of node list.")
+                        nodes.pop(nodes.index(node))
+                    # test_ls(options.targets, node, kubernetes)
+
+    print("Nodes : ", [n["server"] for n in nodes])
+    print("Number of nodes", len(nodes))
 
     n_snapshots = 1
     n_rounds = 10
@@ -497,16 +502,25 @@ if __name__ == "__main__":
             node_type = snapshot_nodes[i]["type"]
             user = snapshot_nodes[i]["user"]
             home_dir = snapshot_nodes[i]["home"]
+            probing_rate = snapshot_nodes[i].get("rate", None)
+            buffer_sniffer_size = snapshot_nodes[i].get("buffer-sniffer-size", None)
+
             remote_resources_dir = snapshot_nodes[i]["resources"]
 
             # Setup the correct options for each node:
             options_node = copy.deepcopy(options)
-            # options.probing_rate = 100000 / len(nodes)
             options_node.inf_born = 0
             options_node.sup_born = 2 ** 32 - 1
             table_node = node.replace(".", "_")
             table_node = table_node.replace("-", "_")
             options_node.db_table += "_" + table_node
+
+            # Common options among infra
+            if probing_rate is not None:
+                options_node.probing_rate = probing_rate
+            if buffer_sniffer_size is not None:
+                options_node.buffer_sniffer_size = buffer_sniffer_size
+
             if node == localhost:
                 options_node.is_remote_probe = False
                 options_node.remove_probe_type = "vm"
@@ -527,6 +541,7 @@ if __name__ == "__main__":
                 options_node.remote_probe_hostname = node
                 options_node.remote_probe_ip = socket.gethostbyname(node)
                 options_node.remote_probe_user = user
+
                 options_node.remote_resources_dir = remote_resources_dir
                 # options_node.probing_rate = 100
                 # Central server home dir
@@ -555,6 +570,8 @@ if __name__ == "__main__":
                 options_node.db_table += "_" + str(int(time.time()))
             else:
                 raise ValueError("Unrecognized node type")
+
+            print("Options for node ", node, options_node.__dict__)
 
             create_table(options_node.db_host, options_node.db_table)
             clean_table(options_node.db_host, options_node.db_table)

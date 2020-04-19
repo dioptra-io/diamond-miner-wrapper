@@ -1,5 +1,3 @@
-import json
-
 from pprint import pprint
 from subprocess import Popen, PIPE
 
@@ -32,23 +30,24 @@ def get_pods(kubernetes):
     res = kube_cmd(
         f"kubectl get pods"
         f' --kubeconfig {kubernetes["kubeconfig"]}'
-        f' --namespace {kubernetes["namespace"]} -o json',
+        f' --namespace {kubernetes["namespace"]} -o wide',
         verbose=False,
     )
 
-    if res:
-        return [
-            {
-                "type": "pod",
-                "server": i["metadata"]["name"],
-                "user": None,
-                "home": "/root/",
-                "resources": "/srv/",
-                "host_ip": i["status"]["hostIP"],
-            }
-            for i in json.loads("\n".join(res)).get("items", [])
-            if i["status"]["phase"] == "Running"
-        ]
+    filtered_nodes = []
+    for node in [r.split() for r in res][1:]:
+        if node[2] == "Running":
+            filtered_nodes.append(
+                {
+                    "type": "pod",
+                    "server": node[0],
+                    "user": None,
+                    "home": "/root/",
+                    "resources": "/srv/",
+                    "host_ip": node[5],
+                }
+            )
+    return filtered_nodes
 
 
 def delete_pods(kubernetes):
@@ -62,20 +61,26 @@ def delete_pods(kubernetes):
 def kube_target_server_to_prober(
     local_target_file, remote_target_file, node, kubernetes
 ):
-    kube_cmd(
+    res = kube_cmd(
         f"kubectl cp {local_target_file} {node['server']}:{remote_target_file}"
         f' --kubeconfig {kubernetes["kubeconfig"]}'
         f' --namespace {kubernetes["namespace"]}'
     )
+    if res is None:
+        return 1
+    return 0
 
 
 def test_ls(file, node, kubernetes):
-    kube_cmd(
+    res = kube_cmd(
         f"kubectl exec -i {node['server']}"
         f' --kubeconfig {kubernetes["kubeconfig"]}'
         f' --namespace {kubernetes["namespace"]}'
         f" -- bash -c 'ls -la {file}'"
     )
+    if res is None:
+        return 1
+    return 0
 
 
 def kube_next_round_server_to_prober_csv(local_csv_file, remote_csv_file, options):
@@ -112,6 +117,8 @@ def kube_probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic)
         + ofile
         + " -r "
         + str(options.probing_rate)
+        + " --buffer-sniffer-size="
+        + str(options.buffer_sniffer_size)
         + " -d "
         + str(options.n_destinations_24)
         + " -i "
