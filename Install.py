@@ -5,7 +5,7 @@ import sys
 
 from threading import Thread
 from subprocess import Popen, PIPE
-
+from Processing.IPv4SSHClient import IPv4SSHClient
 
 password = ""
 
@@ -22,7 +22,7 @@ def rm(path, sftp):
 
 
 def clean(node, user, home):
-    client = paramiko.SSHClient()
+    client = IPv4SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print("Connecting to %s \n with username=%s... \n" % (node, user))
@@ -60,7 +60,7 @@ def rsync(node, user, home):
     for line in err:
         print(node + ": " + line)
 
-    client = paramiko.client.SSHClient()
+    client = IPv4SSHClient()
     client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     client.load_system_host_keys()
     client.connect(node, username=user, password=password)
@@ -99,7 +99,7 @@ def copy_targets(node, user, home, targets_file):
 
 
 def compile(node, user, home):
-    client = paramiko.client.SSHClient()
+    client = IPv4SSHClient()
     client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     client.load_system_host_keys()
     client.connect(node, username=user, password=password)
@@ -146,7 +146,7 @@ def install_dependencies(node, user, home_dir, install_dependencies_script):
     for line in err:
         print(node + ": " + line)
 
-    client = paramiko.client.SSHClient()
+    client = IPv4SSHClient()
     client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     client.load_system_host_keys()
     client.connect(node, username=user, password=password)
@@ -173,7 +173,7 @@ def install_dependencies(node, user, home_dir, install_dependencies_script):
 def full_install(node, user, home_dir):
     targets_file = "/home/survey/Heartbeat-py/resources/traceroute_list.txt"
     install_dependencies_script = "install_dependencies.sh"
-    install_dependencies(node, user, home_dir, install_dependencies_script)
+    # install_dependencies(node, user, home_dir, install_dependencies_script)
     clean(node, user, home_dir)
     rsync(node, user, home_dir)
     copy_targets(node, user, home_dir, targets_file)

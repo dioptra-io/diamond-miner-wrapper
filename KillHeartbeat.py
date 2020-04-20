@@ -2,8 +2,11 @@ import paramiko
 from threading import Thread
 import json
 import sys
+
+from Processing.IPv4SSHClient import IPv4SSHClient
+
 def kill_heartbeat(node, user):
-    client = paramiko.client.SSHClient()
+    client = IPv4SSHClient()
     client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     client.load_system_host_keys()
     client.connect(node, username=user)

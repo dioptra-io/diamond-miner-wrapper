@@ -1,11 +1,13 @@
 import paramiko
 import ipaddress
 
+from Processing.IPv4SSHClient import IPv4SSHClient
+
 from subprocess import Popen, PIPE
 
 
 def next_round_server_to_prober_csv(local_csv_file, remote_csv_file, options):
-    client = paramiko.SSHClient()
+    client = IPv4SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print(
@@ -125,7 +127,7 @@ def pcap_to_csv(snapshot, round, pcap_file, csv_file, start_time_log_file, optio
 
 
 def remove_file_from_remote(file, options):
-    client = paramiko.SSHClient()
+    client = IPv4SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print(
@@ -143,7 +145,7 @@ def remove_file_from_remote(file, options):
 
 
 def prober_to_server(remote_file, local_file, options):
-    client = paramiko.SSHClient()
+    client = IPv4SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print(
@@ -210,7 +212,7 @@ def probe(pcap_file, csv_file, start_time_log_file, options, is_stochastic):
 
         # Probing is done on another machine.
         # So probe and then copy the pcap file on the processing machine.
-        client = paramiko.client.SSHClient()
+        client = IPv4SSHClient()
         client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         client.load_system_host_keys()
         print(
