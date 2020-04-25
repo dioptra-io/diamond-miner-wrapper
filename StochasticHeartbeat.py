@@ -444,7 +444,9 @@ if __name__ == "__main__":
 
     # Instantiate containers in Kuberbernetes
     kubernetes = nodes_configuration.get("kubernetes")
-    sleep_time = 60
+    sleep_time = 300
+
+    pruned_nodes = []
     if kubernetes:
         create_pods(kubernetes)
         print(f"Waiting {sleep_time}s")
@@ -458,11 +460,13 @@ if __name__ == "__main__":
                     )
                     if res == 1:
                         print("Removing", node["server"], "of node list.")
+                        pruned_nodes.append(node["server"])
                         nodes.pop(nodes.index(node))
                     # test_ls(options.targets, node, kubernetes)
 
-    print("Nodes : ", [n["server"] for n in nodes])
+    print("Nodes", [n["server"] for n in nodes])
     print("Number of nodes", len(nodes))
+    print("Pruned nodes", pruned_nodes)
 
     n_snapshots = 1
     n_rounds = 10
@@ -502,8 +506,6 @@ if __name__ == "__main__":
             node_type = snapshot_nodes[i]["type"]
             user = snapshot_nodes[i]["user"]
             home_dir = snapshot_nodes[i]["home"]
-            probing_rate = snapshot_nodes[i].get("rate", None)
-            buffer_sniffer_size = snapshot_nodes[i].get("buffer-sniffer-size", None)
 
             remote_resources_dir = snapshot_nodes[i]["resources"]
 
@@ -514,12 +516,6 @@ if __name__ == "__main__":
             table_node = node.replace(".", "_")
             table_node = table_node.replace("-", "_")
             options_node.db_table += "_" + table_node
-
-            # Common options among infra
-            if probing_rate is not None:
-                options_node.probing_rate = probing_rate
-            if buffer_sniffer_size is not None:
-                options_node.buffer_sniffer_size = buffer_sniffer_size
 
             if node == localhost:
                 options_node.is_remote_probe = False
@@ -542,6 +538,13 @@ if __name__ == "__main__":
                 options_node.remote_probe_ip = socket.gethostbyname(node)
                 options_node.remote_probe_user = user
 
+                probing_rate = snapshot_nodes[i].get("rate", None)
+                buffer_sniffer_size = snapshot_nodes[i].get("buffer_sniffer_size", None)
+                if probing_rate is not None:
+                    options_node.probing_rate = probing_rate
+                if buffer_sniffer_size is not None:
+                    options_node.buffer_sniffer_size = buffer_sniffer_size
+
                 options_node.remote_resources_dir = remote_resources_dir
                 # options_node.probing_rate = 100
                 # Central server home dir
@@ -555,7 +558,17 @@ if __name__ == "__main__":
             elif node_type == "pod":
                 options_node.remote_kubernetes_kubeconfig = kubernetes["kubeconfig"]
                 options_node.remote_kubernetes_namespace = kubernetes["namespace"]
-                options_node.max_ttl = kubernetes["max_ttl_limit"]
+
+                max_ttl = kubernetes.get("max_ttl_limit", None)
+                buffer_sniffer_size = kubernetes.get("buffer_sniffer_size", None)
+                probing_rate = kubernetes.get("rate", None)
+                if max_ttl is not None:
+                    options_node.max_ttl = max_ttl
+                if probing_rate is not None:
+                    options_node.probing_rate = probing_rate
+                if buffer_sniffer_size is not None:
+                    options_node.buffer_sniffer_size = buffer_sniffer_size
+
                 options_node.is_remote_probe = True
                 options_node.remote_probe_type = node_type
                 options_node.remote_probe_hostname = node

@@ -39,7 +39,7 @@ spec:
   selector:
     - value: North_America
       operator: In
-      count: 1
-    # - value: Europe
-    #   operator: In
-    #   count: 1
+      count: 20
+    - value: Europe
+      operator: In
+      count: 2
