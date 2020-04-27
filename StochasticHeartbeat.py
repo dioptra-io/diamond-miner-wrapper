@@ -145,18 +145,36 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
             # Reset the targets to None for the subsequent rounds.
             options.targets = None
         if not options.only_analyse:
-            probe_func(
-                pcap_file,
-                shuffled_probes_csv_file,
-                start_time_log_file,
-                options,
-                is_stochastic,
-            )
+            try:
+                probe_func(
+                    pcap_file,
+                    shuffled_probes_csv_file,
+                    start_time_log_file,
+                    options,
+                    is_stochastic,
+                )
+            except Exception as e:
+                print(
+                    "Exception catched, terminating thread for",
+                    options.remote_probe_hostname,
+                    e,
+                )
+                return
             if options.is_remote_probe and round > 1:
                 remote_shuffled_probes_csv_file = (
                     remote_resources_dir + shuffled_csv_file_suffix
                 )
-                remove_file_from_remote_func(remote_shuffled_probes_csv_file, options)
+                try:
+                    remove_file_from_remote_func(
+                        remote_shuffled_probes_csv_file, options
+                    )
+                except Exception as e:
+                    print(
+                        "Exception catched, terminating thread for",
+                        options.remote_probe_hostname,
+                        e,
+                    )
+                    return
             end_probe_time = time.time()
             print(
                 "probe round "
@@ -171,7 +189,15 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                 scp_time = time.time()
                 remote_pcap_file = remote_resources_dir + pcap_file_suffix
                 local_pcap_file = resources_dir + pcap_file_suffix
-                prober_to_server_func(remote_pcap_file, local_pcap_file, options)
+                try:
+                    prober_to_server_func(remote_pcap_file, local_pcap_file, options)
+                except Exception as e:
+                    print(
+                        "Exception catched, terminating thread for",
+                        options.remote_probe_hostname,
+                        e,
+                    )
+                    return
                 end_scp_time = time.time()
                 print(
                     "scp "
@@ -181,7 +207,15 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                     + " seconds."
                 )
                 # Remove the pcap to not overload the memory of the node
-                remove_file_from_remote_func(pcap_file, options)
+                try:
+                    remove_file_from_remote_func(pcap_file, options)
+                except Exception as e:
+                    print(
+                        "Exception catched, terminating thread for",
+                        options.remote_probe_hostname,
+                        e,
+                    )
+                    return
 
                 # Get the start log file to the central place.
                 if options.proto == "tcp":
@@ -192,9 +226,19 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                     local_start_time_log_file = (
                         resources_dir + start_time_log_file_suffix
                     )
-                    prober_to_server_func(
-                        remote_start_time_log_file, local_start_time_log_file, options
-                    )
+                    try:
+                        prober_to_server_func(
+                            remote_start_time_log_file,
+                            local_start_time_log_file,
+                            options,
+                        )
+                    except Exception as e:
+                        print(
+                            "Exception catched, terminating thread for",
+                            options.remote_probe_hostname,
+                            e,
+                        )
+                        return
                     end_scp_time = time.time()
                     print(
                         "scp "
@@ -282,11 +326,20 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
             remote_shuffled_next_round_csv_file = (
                 remote_resources_dir + shuffled_next_round_csv_file_suffix
             )
-            next_round_server_to_prober_csv_func(
-                local_shuffled_next_round_csv_file,
-                remote_shuffled_next_round_csv_file,
-                options,
-            )
+            try:
+                next_round_server_to_prober_csv_func(
+                    local_shuffled_next_round_csv_file,
+                    remote_shuffled_next_round_csv_file,
+                    options,
+                )
+            except Exception as e:
+                print(
+                    "Exception catched, terminating thread for",
+                    options.remote_probe_hostname,
+                    e,
+                )
+                return
+
             end_scp_time = time.time()
             print(
                 "scp pcap round "
@@ -444,7 +497,7 @@ if __name__ == "__main__":
 
     # Instantiate containers in Kuberbernetes
     kubernetes = nodes_configuration.get("kubernetes")
-    sleep_time = 300
+    sleep_time = 60
 
     pruned_nodes = []
     if kubernetes:
@@ -455,18 +508,20 @@ if __name__ == "__main__":
         if options.targets:
             for node in nodes:
                 if node["type"] == "pod":
-                    res = kube_target_server_to_prober(
-                        options.targets, options.targets, node, kubernetes
-                    )
-                    if res == 1:
-                        print("Removing", node["server"], "of node list.")
-                        pruned_nodes.append(node["server"])
-                        nodes.pop(nodes.index(node))
+                    try:
+                        res = kube_target_server_to_prober(
+                            options.targets, options.targets, node, kubernetes
+                        )
+                    except ValueError:
+                        pass
+                        # print("Removing", node["server"], "of node list.")
+                        # pruned_nodes.append(node["server"])
+                        # nodes.pop(nodes.index(node))
                     # test_ls(options.targets, node, kubernetes)
 
-    print("Nodes", [n["server"] for n in nodes])
-    print("Number of nodes", len(nodes))
-    print("Pruned nodes", pruned_nodes)
+    # print("Nodes", [n["server"] for n in nodes])
+    # print("Number of nodes", len(nodes))
+    # print("Pruned nodes", pruned_nodes)
 
     n_snapshots = 1
     n_rounds = 10

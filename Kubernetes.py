@@ -12,6 +12,7 @@ def kube_cmd(cmd, verbose=True):
     if err:
         for line in err:
             pprint(line)
+        raise ValueError("Error in Kubernetes exchange")
     else:
         if verbose:
             pprint(out)
@@ -61,26 +62,20 @@ def delete_pods(kubernetes):
 def kube_target_server_to_prober(
     local_target_file, remote_target_file, node, kubernetes
 ):
-    res = kube_cmd(
+    kube_cmd(
         f"kubectl cp {local_target_file} {node['server']}:{remote_target_file}"
         f' --kubeconfig {kubernetes["kubeconfig"]}'
         f' --namespace {kubernetes["namespace"]}'
     )
-    if res is None:
-        return 1
-    return 0
 
 
 def test_ls(file, node, kubernetes):
-    res = kube_cmd(
+    kube_cmd(
         f"kubectl exec -i {node['server']}"
         f' --kubeconfig {kubernetes["kubeconfig"]}'
         f' --namespace {kubernetes["namespace"]}'
         f" -- bash -c 'ls -la {file}'"
     )
-    if res is None:
-        return 1
-    return 0
 
 
 def kube_next_round_server_to_prober_csv(local_csv_file, remote_csv_file, options):
