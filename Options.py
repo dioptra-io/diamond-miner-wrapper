@@ -32,6 +32,7 @@ class Options:
         self.targets = None
         self.nodes = os.path.dirname(__file__) + "/nodes/localhost.json"
         self.only_analyse = False
+        self.excluded_prefixes = "/root/Heartbeat/resources/excluded_prefixes"
 
         self.remote_probe_type = "vm"
         self.remote_kubernetes_kubeconfig = None
