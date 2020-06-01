@@ -218,7 +218,7 @@ def stochastic_snapshot(snapshot, starting_round, n_round, table, options):
                     return
 
                 # Get the start log file to the central place.
-                if options.proto == "tcp":
+                if options.proto == "tcp" or options.proto == "udp":
                     scp_time = time.time()
                     remote_start_time_log_file = (
                         remote_resources_dir + start_time_log_file_suffix
