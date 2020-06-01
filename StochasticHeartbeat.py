@@ -505,15 +505,18 @@ if __name__ == "__main__":
         print(f"Waiting {sleep_time}s")
         time.sleep(sleep_time)
         nodes += get_pods(kubernetes)
-        if options.targets:
-            for node in nodes:
-                if node["type"] == "pod":
-                    try:
+        for node in nodes:
+            if node["type"] == "pod":
+                try:
+                    if options.targets:
                         res = kube_target_server_to_prober(
                             options.targets, options.targets, node, kubernetes
                         )
-                    except ValueError:
-                        pass
+                    res = kube_target_server_to_prober(
+                        options.excluded_prefixes, options.excluded_prefixes, node, kubernetes
+                    )
+                except ValueError:
+                    pass
                         # print("Removing", node["server"], "of node list.")
                         # pruned_nodes.append(node["server"])
                         # nodes.pop(nodes.index(node))
