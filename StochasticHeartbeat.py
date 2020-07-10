@@ -501,10 +501,13 @@ if __name__ == "__main__":
 
     pruned_nodes = []
     if kubernetes:
-        create_pods(kubernetes)
-        print(f"Waiting {sleep_time}s")
-        time.sleep(sleep_time)
-        nodes += get_pods(kubernetes)
+        try:
+            create_pods(kubernetes)
+            print(f"Waiting {sleep_time}s")
+            time.sleep(sleep_time)
+            nodes += get_pods(kubernetes)
+        except ValueError:
+            pass
         for node in nodes:
             if node["type"] == "pod":
                 try:
